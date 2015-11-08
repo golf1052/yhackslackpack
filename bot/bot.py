@@ -7,16 +7,27 @@ from threading import Thread
 from slackclient import SlackClient
 
 PROJECT_ROOT = "../"
-connection = pika.BlockingConnection(pika.ConnectionParameters(
-        host='localhost'))
-channel = connection.channel()
+channel = None
 sc = None
 slack_channel = None
 
-def wait_for_response(queue):
+def start_pika():
+    print 'starting pika'
+    connection = pika.SelectConnection(pika.ConnectionParameters(host='localhost'))
+    #t = Thread(target=connection.ioloop.start())
+    #t.start()
+
+def on_connected(connection):
+    connection.channel(on_channel_open)
+
+def on_channel_open(new_channel):
+    global channel
+    channel = new_channel
+    channel.queue_declare(queue='input',callback=on_queue_declared)
+
+def on_queue_declared(frame):
     print "Waiting for response from user " + queue
     channel.basic_consume(received_message, queue=queue, no_ack=True, consumer_tag=queue)
-    channel.start_consuming()
 
 def received_message(ch, method, properties, body):
     print "Bot Received %r" % (body,)
@@ -68,11 +79,6 @@ def get_service_module(service):
     service_path = PROJECT_ROOT + config.get('Modules', service)
     return imp.load_source('module.name', service_path)
 
-def listen_to_services():
-    channel.queue_declare(queue='input')
-    while True:
-        wait_for_response('input')
-
 # Process input from slack and either spin up the related service
 # or send the message as part of an ongoing exchange
 def process(user, message):
@@ -116,8 +122,7 @@ def run(apikey):
 
 
 def main():
-    t = Thread(target=listen_to_services)
-    t.start()
+    start_pika()
     config = ConfigParser.ConfigParser()
     config.read("../credentials.ini")
     token = config.get('Slack', 'apikey')
