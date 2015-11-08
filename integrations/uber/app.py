@@ -12,11 +12,8 @@ import requests
 import string
 import db
 
-app = Flask(__name__, static_folder='static', static_url_path='')
-app.requests_session = requests.Session()
-app.secret_key = os.urandom(24)
+requests_session = requests.Session()
 
-sslify = SSLify(app)
 
 with open('config.json') as f:
     config = json.load(f)
@@ -42,10 +39,7 @@ def callback(ch, method, properties, body):
     params = {
         'message': body,
     }
-    app.requests_session.get(
-        "http://127.0.0.1:7000/",
-        params = params,
-    )
+    signup(body)
 
 #here "message" is our standard JSON blob of ID/message
 def send_slack_message(message):
@@ -87,14 +81,13 @@ def generate_ride_headers(token):
     }
 
 
-@app.route('/health', methods=['GET'])
 def health():
     """Check the status of this application."""
     return ';-)'
 
 
-@app.route('/', methods=['GET'])
-def signup():
+
+def signup(message):
     """The first step in the three-legged OAuth handshake.
 
     You should navigate here first. It will redirect to login.uber.com.
@@ -116,14 +109,10 @@ def signup():
     url = generate_oauth_service().get_authorize_url(**params)
     return redirect(url)
 
-
-@app.route('/surge_confirm', methods=['POST'])
 def surge_confirm():
     #confirm this is correct
     surge_confirm_id = request.args.get('surge_confirmation_id')
 
-
-@app.route('/submit', methods=['GET'])
 def submit():
     """The other two steps in the three-legged Oauth handshake.
 
@@ -152,14 +141,11 @@ def submit():
         token=response.json().get('access_token')
     )
 
-
-@app.route('/demo', methods=['GET'])
 def demo():
     """Demo.html is a template that calls the other routes in this example."""
     return render_template('demo.html', token=session.get('access_token'))
 
 
-@app.route('/products', methods=['GET'])
 def products():
     """Example call to the products endpoint.
 
@@ -182,7 +168,6 @@ def products():
     return response.text
 
 
-@app.route('/ridereq', methods=['GET'])
 def ridereq():
     """
     DO NOT USE THE BASE UBER URL OR I GET CHARGED MONEY
@@ -235,8 +220,6 @@ def time():
         return 'There was an error', response.status_code
     return response.text
 
-
-@app.route('/price', methods=['GET'])
 def price():
     """Example call to the price estimates endpoint.
 
@@ -260,8 +243,6 @@ def price():
         return 'There was an error', response.status_code
     return response.text
 
-
-@app.route('/history', methods=['GET'])
 def history():
     """Return the last 5 trips made by the logged in user."""
     url = config.get('base_uber_url_v1_1') + 'history'
@@ -270,7 +251,7 @@ def history():
         'limit': 5,
     }
 
-    response = app.requests_session.get(
+    response = requests_session.get(
         url,
         headers=generate_ride_headers(session.get('access_token')),
         params=params,
@@ -280,12 +261,10 @@ def history():
         return 'There was an error', response.status_code
     return response.text
 
-
-@app.route('/me', methods=['GET'])
 def me():
     """Return user information including name, picture and email."""
     url = config.get('base_uber_url') + 'me'
-    response = app.requests_session.get(
+    response = requests_session.get(
         url,
         headers=generate_ride_headers(session.get('access_token')),
     )
@@ -316,7 +295,7 @@ def getLatLng(address):
         'key': google_key,
     }
 
-    response = app.requests_session.get(
+    response = requests_session.get(
         google_url,
         params=params,
     )
@@ -329,6 +308,5 @@ def getLatLng(address):
     return latlng
 
 if __name__ == '__main__':
-    app.debug = os.environ.get('FLASK_DEBUG', True)
-    #set_up_rabbit()
-    app.run(port=7000, threaded=True)
+    set_up_rabbit()
+    wait_for_response()
