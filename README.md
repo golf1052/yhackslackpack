@@ -1,36 +1,45 @@
-# YHackSlackPack
-It rhymes!
+# YHackSlackPack Venmo Slash Command
+Now you have no excuse not to pay your boss back for lunch.
 
-## What is it?
-The YHackSlackPack is a bunch of integrations for Slack.
+Supports
+- View balance
+- Pay/Charge by username, phone, or email
+- View pending Venmos
+- Complete/reject a pending Venmo
 
-### Current Integrations
-- Venmo
-  - View balance
-  - Pay/Charge by username, phone, or email
-  - View pending Venmos
-  - Complete/reject a pending Venmo
-- Tinder
-  - View nearby Tinder profiles
-  - Swipe left or right on a profile
-- Uber (not completed)
-  - Order and uber
-  - See history
-  - Price requests
-  - Update in realtime
+# Usage
+- venmo balance
+  - returns your Venmo balance
+- venmo (audience) pay/charge amount for note to recipients
+  - example: venmo public charge $10.00 for lunch to testuser phone:5555555555 email:example@example.com
+  - audience (optional) = public OR friends OR private
+    - defaults to friends if omitted
+  - pay/charge = pay OR charge
+  - amount = Venmo amount
+  - note = Venmo message
+  - recipients = list of recipients, can specify Venmo username, phone number prefixed with phone: or email prefixed with email:
+- venmo pending (to OR from)
+  - returns pending venmo charges, defaults to to
+  - also returns ID for payment completion
+- venmo complete accept/reject number
+  - accept OR reject a payment with the given ID
+- venmo code code
+  - code = Venmo authentication code
+- venmo help
+  - this help message
   
-### Potential Integrations
-- SMS (using Twilio)
-- Dominos (order pizza)
-- Twitter (send Tweets)
+# Setup
+## Mongo
+Setup a Mongo database somwhere that your server can access. The app uses a Mongo database to store auth information for users.
 
-## How does it work?
-There are two fundamental parts. A bot running on Slack waiting for messages and integrations waiting to perform actions on messages.
+## Venmo
+Register a Venmo app [here](https://venmo.com/account/settings/developer). The client id and client secret will go in your credentials.ini file.
 
-### Bot
-The bot waits for a private message to be sent to it by a user. Once it receives a message the bot will check to see if there is an integration that can respond to the message. If there is one the bot will send the message along with the user ID of the user who sent the message to a queue. The bot also listens on an input queue and once a message comes in from an integration the bot will send that message to the specified Slack user by a private message.
+## Credentials
+First setup a credentials.ini file in the venmo folder. There is an example credentials_sample.ini file that should show you want you need.
 
-### Integrations
-Integrations get started by the bot if they currently are not running. The integration gets passed the message and user ID as an argument. The integration should then process the message and perform an action. Once the integration is done it should send a message back to the input queue so the bot can send the message to Slack. The integration can then quit at this point or it can stay running waiting for more messages from the queue.
+## Flask
+The bot integration was turned into a Flask app so that it could become a slash command on Venmo. The app needs to be setup on a server so that Slack can send POST requests to it.
 
-Using Venmo as an example the Venmo integration may get "venmo charge $1 for lunch to jeff" from the bot. The integration will look for the Venmo username jeff in the currently authed user's friend's list and then create a Venmo charge of $1 with a note of lunch. Once the charge has been created the Venmo integration sends a confirmation message and quits.
+## Slack
+Once the app is up and running create a new slash command integration on Slack. Set the command as /venmo and set the URL to where ever you set up your Flask app on. Save the integration and you should be good to go!
