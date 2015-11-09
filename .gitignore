@@ -342,3 +342,5 @@ bot/bot.pyproj
 bot/bot.sln
 integrations/venmo/venmo.pyproj
 integrations/venmo/venmo.sln
+venmo/venmo.pyproj
+venmo/venmo.sln
