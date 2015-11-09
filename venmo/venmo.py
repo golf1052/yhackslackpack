@@ -38,7 +38,7 @@ def respond(message, response_url):
 # Connects to mongo and returns a MongoClient
 def connect_to_mongo():
     credentials = ConfigParser.ConfigParser()
-    credentials.read("../credentials.ini")
+    credentials.read("credentials.ini")
     host = credentials.get("Mongo", "connection")
     user = credentials.get("Mongo", "user")
     password = credentials.get("Mongo", "password")
@@ -61,7 +61,7 @@ def update_database(user_id, db, access_token, expires_date, refresh_token):
 
 def get_access_token(user_id, response_url):
     config = ConfigParser.ConfigParser()
-    config.read('../credentials.ini')
+    config.read('credentials.ini')
     db = connect_to_mongo()
     venmo_auth = db.users.find_one({'_id': user_id}, {'venmo': 1})
     print venmo_auth
@@ -75,6 +75,7 @@ def get_access_token(user_id, response_url):
                        'venmo code CODE')
         respond(url_message, response_url)
         return None
+        
     else:
         expires_date = venmo_auth['venmo']['expires_in'].replace(tzinfo = pytz.utc)
         if (expires_date < datetime.datetime.utcnow().replace(tzinfo = pytz.utc)):
@@ -94,7 +95,7 @@ def get_access_token(user_id, response_url):
 
 def complete_auth(code, user_id, response_url):
     config = ConfigParser.ConfigParser()
-    config.read('../credentials.ini')
+    config.read('credentials.ini')
     db = connect_to_mongo()
     post_data = {
         'client_id': config.get('Venmo', 'clientId'),
@@ -345,4 +346,4 @@ def parse_message(message, access_token, user_id, venmo_id, response_url):
         venmo_payment(audience, which, amount, note, recipients, access_token, venmo_id, response_url)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
