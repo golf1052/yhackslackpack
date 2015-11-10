@@ -11,9 +11,15 @@ app = Flask(__name__)
 
 @app.route('/', methods=['POST'])
 def process():
+    credentials = ConfigParser.ConfigParser()
+    credentials.read('credentials.ini')
     user_id = request.values.get('user_id')
     message = request.values.get('text')
     response_url = request.values.get('response_url')
+    token = request.values.get('token')
+    verification_token = credentials.get('Slack', 'token')
+    if (token != verification_token):
+        return str('Team verification token mismatch')
     split_message = message.split()
     if (len(split_message) > 0):
         if (split_message[0].lower() == 'code'):
