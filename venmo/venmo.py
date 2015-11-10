@@ -1,4 +1,4 @@
-from flask import Flask, request
+﻿from flask import Flask, request
 import ConfigParser
 import requests
 import datetime
@@ -172,7 +172,7 @@ def venmo_payment(audience, which, amount, note, recipients, access_token, venmo
         else:
             id = _find_friend(full, r)
             if (id == None):
-                parse_error('You are not friends with ' + r)
+                parse_error('You are not friends with ' + r, response_url)
                 return
             post_data['user_id'] = id
         post_data['note'] = note
@@ -292,9 +292,9 @@ def parse_message(message, access_token, user_id, venmo_id, response_url):
             if (which == 'to' or which == 'from'):
                 venmo_pending(which, access_token, venmo_id, response_url)
             else:
-                parse_error('Valid pending commands\npending\npending to\npending from')
+                parse_error('Valid pending commands\npending\npending to\npending from', response_url)
         else:
-            parse_error('Valid pending commands\npending\npending to\npending from')
+            parse_error('Valid pending commands\npending\npending to\npending from', response_url)
     elif (split_message[1].lower() == 'complete'):
         if (len(split_message) == 4):
             which = split_message[2].lower()
@@ -303,27 +303,27 @@ def parse_message(message, access_token, user_id, venmo_id, response_url):
                 try:
                     number = int(split_message[3])
                 except:
-                    parse_error('Payment completion number must be a number')
+                    parse_error('Payment completion number must be a number', response_url)
                     return
                 venmo_complete(which, number, access_token, response_url)
             else:
-                parse_error('Valid complete commands\nvenmo complete accept #\nvenmo complete reject #')
+                parse_error('Valid complete commands\nvenmo complete accept #\nvenmo complete reject #', response_url)
         else:
-            parse_error('Valid complete commands\nvenmo complete accept #\nvenmo complete reject #')
+            parse_error('Valid complete commands\nvenmo complete accept #\nvenmo complete reject #', response_url)
     elif (len(split_message) <= 2):
-        parse_error('Invalid payment string')
+        parse_error('Invalid payment string', response_url)
     elif (split_message[1].lower() == 'charge' or split_message[2].lower() == 'charge' or
           split_message[1].lower() == 'pay' or split_message[2].lower() == 'pay'):
         audience = 'friends'
         if (split_message[2].lower() == 'charge' or split_message[2].lower() == 'pay'):
             audience = split_message[1].lower()
             if (audience != 'public' and audience != 'friends' and audience != 'private'):
-                parse_error('Valid payment sharing commands\npublic\nfriend\nprivate')
+                parse_error('Valid payment sharing commands\npublic\nfriend\nprivate', response_url)
                 return
             del split_message[1]
         which = split_message[1]
         if (len(split_message) <= 6):
-            parse_error('Invalid payment string')
+            parse_error('Invalid payment string', response_url)
             return
         amount_str = split_message[2]
         amount = 0
@@ -332,18 +332,18 @@ def parse_message(message, access_token, user_id, venmo_id, response_url):
         try:
             amount = float(amount_str)
         except:
-            parse_error('Invalid amount')
+            parse_error('Invalid amount', response_url)
             return
         if (split_message[3].lower() != 'for'):
-            parse_error('Invalid payment string')
+            parse_error('Invalid payment string', response_url)
             return
         to_index = _find_last_str_in_list(split_message, 'to')
         if (to_index < 5):
-            parse_error('Could not find recipients')
+            parse_error('Could not find recipients', response_url)
             return
         note = ' '.join(split_message[4:to_index])
         recipients = split_message[to_index + 1:]
         venmo_payment(audience, which, amount, note, recipients, access_token, venmo_id, response_url)
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(debug=True, use_reloader=False)
